@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+
+        circle {
+            fill: rgb(31, 119, 180);
+            fill-opacity: .25;
+            stroke: rgb(31, 119, 180);
+            stroke-width: 1px;
+        }
+
+        .leaf circle {
+            fill: #ff7f0e;
+            fill-opacity: 1;
+        }
+
+        text {
+            font: 10px "Arial Black";
+        }
+
+        #col1 {
+            float:left;
+            width:560px;
+        }
+        #buttons {
+           height:250px;
+           width: 300px;
+        }
+        div#spacer {
+            height:10px;
+        }
+        #totals {
+            height:400px;
+        }
+        div #buttons{
+            height: 50px;
+            width: 400px;
+            position: relative;
+        }
+        #button1, #button2, #button3 {
+            float: left;
+            padding: 4px;
+        }
+        #button1 {
+            border: 3px solid black;
+        }
+        #button2 {
+            border-top: 3px;
+            border-bottom: 3px;
+            border-left: 0px;
+            border-right: 3px;
+            border-style: solid;
+            border-color: black;
+        }
+        #button3 {
+            border-top: 3px;
+            border-bottom: 3px;
+            border-left: 0px;
+            border-right: 3px;
+            border-style: solid;
+            border-color: black;        }
+        .hyperspan {
+            opacity: .3;
+            position:absolute;
+            width:100%;
+            height:100%;
+            left:0;
+            top:0;
+            z-index:1;
+        }
+        *{
+            font-family: "Arial Black" ;
+        }
+        table#tbl >  td:first-child {
+            width:300px;
+        }
+        table#tbl >  td::nth-child(2) {
+            width:20px;
+        }
+    </style>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+</head>
+<body>
+
+<div id="col1">
+    <h1>WHERE DID THE MONEY GO?</h1>
+    <div id="buttons">
+        <div id="button1">
+            <div id="music" class="nav">All spending
+                <a href="#">
+                    <span class="hyperspan"></span>
+                </a>
+            </div>
+        </div>
+        <div id="button2">
+            <div id="music" class="nav">Compare spending
+                <a href="#">
+                    <span class="hyperspan"></span>
+                </a>
+            </div>
+        </div>
+        <div id="button3">
+            <div id="music" class="nav">Changes
+                <a href="#">
+                    <span class="hyperspan"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div id="spacer"></div>
+    <div id="totals">
+        <table id="tbl"><tbody></tbody></table>
+    </div>
+</div>
+<div id="col2">
+    <div class="circles">
+        <script>
+
+            var diameter = 960,
+                    format = d3.format(",d");
+
+            var pack = d3.layout.pack()
+                    .size([diameter - 4, diameter - 4])
+                    .value(function(d) { return d.amount; });
+
+            var svg = d3.select("body").append("svg")
+                    .attr("width", diameter)
+                    .attr("height", diameter)
+                    .append("g")
+                    .attr("transform", "translate(2,2)");
+
+            d3.json("http://localhost:5555/data", function(error, root) {
+                var node = svg.datum(root).selectAll(".node")
+                        .data(pack.nodes)
+                        .enter().append("g")
+                        .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+                        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+                node.append("title")
+                        .text(function(d) { return d.name + (d.children ? "" : ": " + format(d.amount)); });
+
+                node.append("circle")
+                        .attr("r", function(d) { return d.r; });
+
+                node.filter(function(d) { return !d.children; }).append("text")
+                        .attr("dy", ".3em")
+                        .style("text-anchor", "middle")
+                        .text(function(d) { return d.name.substring(0, d.r / 3); });
+
+                //Populate data into table
+                $('table#tbl tbody').append('<tr><td>TOTAL&nbsp;</td><td></td><td>$' + Number(root.amount.toFixed(2)).formatMoney(2, '.', ',') +'</td></tr>');
+                $('table#tbl tbody').append('<tr><td colspan="3"><hr/></td></tr>');
+
+                var children = root.children;
+                for (var i = 0; i < children.length; i++) {
+                    $('table#tbl tbody').append('<tr><td>' + children[i].name.toUpperCase() + '</td><td></td><td>$' + Number(children[i].amount.toFixed(2)).formatMoney(2, '.', ',') + '</td></tr>');
+                };
+
+            });
+
+            d3.select(self.frameElement).style("height", diameter + "px");
+
+            Number.prototype.formatMoney = function(c, d, t){
+                var n = this,
+                        c = isNaN(c = Math.abs(c)) ? 2 : c,
+                        d = d == undefined ? "." : d,
+                        t = t == undefined ? "," : t,
+                        s = n < 0 ? "-" : "",
+                        i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "",
+                        j = (j = i.length) > 3 ? j % 3 : 0;
+                return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
+            };
+
+        </script>
+    </div>
+</div>
+
+</body>
+</html>
